@@ -1,5 +1,5 @@
 // app/api/spotify/route.ts
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
@@ -16,6 +16,12 @@ export async function GET() {
         get(name: string) {
           return cookieStore.get(name)?.value
         },
+        set(name: string, value: string, options: CookieOptions) {
+          cookieStore.set({ name, value, ...options })
+        },
+        remove(name: string, options: CookieOptions) {
+          cookieStore.set({ name, value: '', ...options })
+        },
       },
     }
   )
@@ -24,13 +30,13 @@ export async function GET() {
     const { data: { session } } = await supabase.auth.getSession()
 
     if (!session || !session.provider_token) {
-      throw new Error('User is not authenticated with Spotify')
+      throw new Error('User is not authenticated with Spotify or token is missing.')
     }
 
     const token = session.provider_token;
 
-    // CORRECTED URL for recently played tracks
-    const historyResponse = await fetch('https://api.spotify.com/v1/me/player/recently-played?limit=20', {
+    // --- OFFICIAL SPOTIFY API URL ---
+    const historyResponse = await fetch('api.spotify.com', {
       headers: { Authorization: `Bearer ${token}` }
     });
 
@@ -46,8 +52,9 @@ export async function GET() {
     }
 
     const trackIds = historyData.items.map((item: any) => item.track.id).join(',');
-    // CORRECTED URL for audio features
-    const featuresResponse = await fetch(`https://api.spotify.com/v1/audio-features?ids=${trackIds}`, {
+    
+    // --- OFFICIAL SPOTIFY API URL ---
+    const featuresResponse = await fetch(`https://api.spotify.com/v1/me/player/recently-played{trackIds}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
 

@@ -33,7 +33,7 @@ export default function Home() {
           providers={['google', 'spotify']}
           redirectTo='http://localhost:3000/auth/callback'
           queryParams={{
-            scope: 'user-read-recently-played user-read-email', // <-- The change is here
+            scope: 'user-read-recently-played user-read-email',
           }}
         />
       </div>

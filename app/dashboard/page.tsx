@@ -25,7 +25,6 @@ export default function DashboardPage() {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
 
-      // Fetch data from our own database
       const { data: dbData } = await supabase.from('behavioral_data').select('created_at, overall_risk_score').order('created_at', { ascending: true })
       if (dbData) {
         const formattedData = dbData.map(item => ({
@@ -35,14 +34,19 @@ export default function DashboardPage() {
         setChartData(formattedData);
       }
 
-      // Fetch data from our new API route
       try {
         const response = await fetch('/api/spotify');
+        if (!response.ok) {
+            // If the server responded with an error, show it
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'API request failed');
+        }
         const data = await response.json();
         if (data.mood) setMusicMood(data.mood);
-        else throw new Error(data.error);
-      } catch (error) {
-        setMusicMood('N/A'); // Set to N/A if Spotify isn't connected or fails
+        else throw new Error(data.error || 'Unknown error');
+      } catch (error: any) {
+        console.error("Dashboard fetch error:", error.message);
+        setMusicMood('N/A'); 
       }
 
       setLoading(false)
